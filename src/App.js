@@ -221,18 +221,38 @@ function App() {
         {processedData && processedData.excelData && (
           <div className="results-container">
             <h2>Processing Results</h2>
+            
             <div className="stats-container">
               <div className="stat-item">
-                <span className="stat-label">Excel Items:</span>
+                <span className="stat-label">Excel Items</span>
                 <span className="stat-value">{processedData.stats.totalItems}</span>
               </div>
               <div className="stat-item">
-                <span className="stat-label">Sale Items:</span>
+                <span className="stat-label">Sale Items</span>
                 <span className="stat-value">{processedData.stats.saleItems}</span>
               </div>
               <div className="stat-item">
-                <span className="stat-label">PDF Items:</span>
+                <span className="stat-label">PDF Items</span>
                 <span className="stat-value">{processedData.stats.pdfItems}</span>
+              </div>
+              <div className="stat-item highlight-stat">
+                <span className="stat-label">Matched Items</span>
+                <span className="stat-value">{processedData.stats.totalMatches}</span>
+              </div>
+            </div>
+            
+            <div className="match-stats">
+              <div className="match-stat-item">
+                <span className="match-label">Sale Items in PDF:</span>
+                <span className="match-value">{processedData.stats.saleItemsInPdf}</span>
+              </div>
+              <div className="match-stat-item">
+                <span className="match-label">Sale Items not in PDF:</span>
+                <span className="match-value">{processedData.stats.saleItemsNotInPdf}</span>
+              </div>
+              <div className="match-stat-item">
+                <span className="match-label">Regular Items in PDF:</span>
+                <span className="match-value">{processedData.stats.regularItemsInPdf}</span>
               </div>
             </div>
             
@@ -245,14 +265,27 @@ function App() {
                       <th>Article No.</th>
                       <th>US Sale</th>
                       <th>Status</th>
+                      <th>In PDF</th>
                     </tr>
                   </thead>
                   <tbody>
                     {processedData.excelData.slice(0, 10).map((item, index) => (
-                      <tr key={`excel-${index}`} className={item.isSaleItem ? 'sale-item' : ''}>
+                      <tr 
+                        key={`excel-${index}`} 
+                        className={
+                          item.isMatch ? 'match-item' : 
+                          item.isSaleItem ? 'sale-item' : ''
+                        }
+                      >
                         <td>{item.articleNo}</td>
                         <td>{item.usSale || '-'}</td>
                         <td>{item.isSaleItem ? 'On Sale' : 'Regular'}</td>
+                        <td>
+                          {item.isInPdf ? 
+                            <span className="status-icon yes">✓</span> : 
+                            <span className="status-icon no">✗</span>
+                          }
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -268,19 +301,49 @@ function App() {
                   <thead>
                     <tr>
                       <th>Article No.</th>
+                      <th>In Excel</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {processedData.pdfData.articleNumbers.slice(0, 10).map((item, index) => (
-                      <tr key={`pdf-${index}`}>
-                        <td>{item}</td>
-                      </tr>
-                    ))}
+                    {processedData.pdfData.articleNumbers.slice(0, 10).map((item, index) => {
+                      const inExcel = processedData.excelData.some(
+                        excelItem => String(excelItem.articleNo).trim() === item
+                      );
+                      const isSaleItem = processedData.excelData.some(
+                        excelItem => String(excelItem.articleNo).trim() === item && excelItem.isSaleItem
+                      );
+                      
+                      return (
+                        <tr 
+                          key={`pdf-${index}`}
+                          className={inExcel && isSaleItem ? 'match-item' : ''}
+                        >
+                          <td>{item}</td>
+                          <td>
+                            {inExcel ? 
+                              <span className="status-icon yes">✓</span> : 
+                              <span className="status-icon no">✗</span>
+                            }
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 {processedData.pdfData.articleNumbers.length > 10 && (
                   <p className="table-note">Showing 10 of {processedData.pdfData.articleNumbers.length} items</p>
                 )}
+              </div>
+            </div>
+            
+            <div className="legend">
+              <div className="legend-item">
+                <span className="legend-color sale-color"></span>
+                <span className="legend-text">Sale Item</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color match-color"></span>
+                <span className="legend-text">Matched Item (Sale Item in PDF)</span>
               </div>
             </div>
           </div>

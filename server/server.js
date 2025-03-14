@@ -115,6 +115,35 @@ async function parsePdfFile(filePath) {
   }
 }
 
+// Function to match sale items with PDF article numbers
+function matchSaleItemsWithPdf(excelData, pdfArticleNumbers) {
+  // Create a Set from PDF article numbers for faster lookups
+  const pdfArticleSet = new Set(pdfArticleNumbers);
+  
+  // Mark each Excel item if it's found in the PDF
+  const matchedData = excelData.map(item => {
+    // Convert to string to ensure consistent comparison
+    const articleNoStr = String(item.articleNo).trim();
+    const isInPdf = pdfArticleSet.has(articleNoStr);
+    
+    return {
+      ...item,
+      isInPdf,
+      isMatch: item.isSaleItem && isInPdf // It's a match if it's both on sale and in the PDF
+    };
+  });
+  
+  // Calculate match statistics
+  const matchStats = {
+    totalMatches: matchedData.filter(item => item.isMatch).length,
+    saleItemsInPdf: matchedData.filter(item => item.isSaleItem && item.isInPdf).length,
+    saleItemsNotInPdf: matchedData.filter(item => item.isSaleItem && !item.isInPdf).length,
+    regularItemsInPdf: matchedData.filter(item => !item.isSaleItem && item.isInPdf).length
+  };
+  
+  return { matchedData, matchStats };
+}
+
 // API endpoint for file upload
 app.post('/api/upload', upload.fields([
   { name: 'excel', maxCount: 1 },
@@ -137,6 +166,9 @@ app.post('/api/upload', upload.fields([
     // Parse PDF file
     const pdfData = await parsePdfFile(pdfFilePath);
     
+    // Match sale items with PDF article numbers
+    const { matchedData, matchStats } = matchSaleItemsWithPdf(excelData, pdfData.articleNumbers);
+    
     // Calculate statistics
     const totalItems = excelData.length;
     const saleItems = excelData.filter(item => item.isSaleItem).length;
@@ -146,12 +178,13 @@ app.post('/api/upload', upload.fields([
     res.json({
       success: true,
       message: 'Files processed successfully',
-      excelData,
+      excelData: matchedData,
       pdfData,
       stats: {
         totalItems,
         saleItems,
-        pdfItems
+        pdfItems,
+        ...matchStats
       }
     });
     
