@@ -9,12 +9,15 @@ function App() {
   const [error, setError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [processedData, setProcessedData] = useState(null);
   
   const excelInputRef = useRef(null);
   const pdfInputRef = useRef(null);
   
   // Maximum file size in bytes (20MB)
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
+  // Server API URL
+  const API_URL = 'http://localhost:5000/api/upload';
 
   const handleExcelUploadClick = () => {
     setError(null);
@@ -92,6 +95,7 @@ function App() {
     setIsUploading(true);
     setError(null);
     setUploadStatus(null);
+    setProcessedData(null);
 
     // Create FormData object to send files
     const formData = new FormData();
@@ -99,24 +103,23 @@ function App() {
     formData.append('pdf', selectedFiles.pdf);
 
     try {
-      // In a real application, replace with your actual API endpoint
-      // const response = await fetch('https://your-api-endpoint/upload', {
-      //   method: 'POST',
-      //   body: formData,
-      // });
-
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate successful response
-      // if (response.ok) {
-      setUploadStatus({
-        success: true,
-        message: 'Files uploaded successfully!'
+      // Send files to the server
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: formData,
       });
-      // } else {
-      //   throw new Error(`Server responded with status: ${response.status}`);
-      // }
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setUploadStatus({
+          success: true,
+          message: result.message || 'Files uploaded successfully!'
+        });
+        setProcessedData(result);
+      } else {
+        throw new Error(result.message || `Server responded with status: ${response.status}`);
+      }
     } catch (err) {
       setUploadStatus({
         success: false,
@@ -205,13 +208,54 @@ function App() {
         {isUploading && (
           <div className="loading-indicator">
             <div className="spinner"></div>
-            <p>Uploading files, please wait...</p>
+            <p>Uploading and processing files, please wait...</p>
           </div>
         )}
         
         {uploadStatus && (
           <div className={`status-message ${uploadStatus.success ? 'success' : 'error'}`}>
             {uploadStatus.message}
+          </div>
+        )}
+        
+        {processedData && processedData.excelData && (
+          <div className="results-container">
+            <h2>Processing Results</h2>
+            <div className="stats-container">
+              <div className="stat-item">
+                <span className="stat-label">Total Items:</span>
+                <span className="stat-value">{processedData.stats.totalItems}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Sale Items:</span>
+                <span className="stat-value">{processedData.stats.saleItems}</span>
+              </div>
+            </div>
+            
+            <div className="data-table-container">
+              <h3>Extracted Data</h3>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Article No.</th>
+                    <th>US Sale</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {processedData.excelData.slice(0, 10).map((item, index) => (
+                    <tr key={index} className={item.isSaleItem ? 'sale-item' : ''}>
+                      <td>{item.articleNo}</td>
+                      <td>{item.usSale || '-'}</td>
+                      <td>{item.isSaleItem ? 'On Sale' : 'Regular'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {processedData.excelData.length > 10 && (
+                <p className="table-note">Showing 10 of {processedData.excelData.length} items</p>
+              )}
+            </div>
           </div>
         )}
       </header>

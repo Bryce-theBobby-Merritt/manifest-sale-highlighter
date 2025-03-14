@@ -11,6 +11,7 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  padding: 20px;
 }
 
 .upload-buttons {
@@ -154,4 +155,88 @@
   background-color: rgba(255, 99, 71, 0.2);
   border-left: 4px solid tomato;
   color: white;
+}
+
+/* Results display styles */
+.results-container {
+  margin-top: 40px;
+  width: 90%;
+  max-width: 800px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.results-container h2 {
+  margin-top: 0;
+  color: #61dafb;
+  font-size: 24px;
+}
+
+.stats-container {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: rgba(97, 218, 251, 0.1);
+  border-radius: 4px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #a0a0a0;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #61dafb;
+}
+
+.data-table-container {
+  margin-top: 30px;
+}
+
+.data-table-container h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th {
+  background-color: rgba(97, 218, 251, 0.2);
+  padding: 10px;
+  text-align: left;
+}
+
+.data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.data-table tr.sale-item {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.data-table tr.sale-item td {
+  border-left: 2px solid #4caf50;
+}
+
+.table-note {
+  font-size: 12px;
+  color: #a0a0a0;
+  text-align: right;
+  margin-top: 10px;
 } 

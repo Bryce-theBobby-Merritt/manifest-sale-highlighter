@@ -7,6 +7,8 @@ A web application that helps logistics coordinators identify sale items in manif
 - Upload Excel files containing sale item information
 - Upload PDF manifest files
 - File validation (type and size)
+- Excel parsing to extract Article No. and US Sale columns
+- Identification of sale items
 - Highlight sale items that appear in the manifest
 - Generate downloadable reports
 
@@ -17,8 +19,10 @@ A web application that helps logistics coordinators identify sale items in manif
 - ✅ PDF file selection (.pdf)
 - ✅ File size validation
 - ✅ Submit functionality with loading indicator
-- 🔄 Server-side processing (coming soon)
-- 🔄 Results display (coming soon)
+- ✅ Server-side Excel parsing
+- ✅ Sale item identification
+- 🔄 PDF manifest parsing (coming soon)
+- 🔄 Matching sale items with manifest items (coming soon)
 - 🔄 Report generation (coming soon)
 
 ## Getting Started
@@ -36,17 +40,30 @@ A web application that helps logistics coordinators identify sale items in manif
    cd manifest-sale-highlighter
    ```
 
-2. Install dependencies
+2. Install client dependencies
    ```
    npm install
    ```
 
-3. Start the development server
+3. Install server dependencies
+   ```
+   cd server
+   npm install
+   cd ..
+   ```
+
+4. Start the server
+   ```
+   cd server
+   npm start
+   ```
+
+5. In a new terminal, start the client
    ```
    npm start
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Usage
 
@@ -56,23 +73,34 @@ A web application that helps logistics coordinators identify sale items in manif
 4. Wait for the processing to complete
 5. View the highlighted sale items in the results
 
+## Project Structure
+
+- `src/` - React client application
+  - `App.js` - Main application component
+  - `App.css` - Styling for the application
+- `public/` - Static assets and HTML template
+- `server/` - Express server application
+  - `server.js` - Main server file
+  - `uploads/` - Directory for uploaded files
+
 ## Technologies Used
 
+### Client
 - React.js
 - CSS3
 - JavaScript (ES6+)
 - FormData API for file uploads
 
-## Project Structure
-
-- `src/App.js` - Main application component
-- `src/App.css` - Styling for the application
-- `public/` - Static assets and HTML template
+### Server
+- Express.js
+- Multer for file uploads
+- XLSX for Excel parsing
+- Node.js
 
 ## Future Enhancements
 
-- Server-side processing of Excel and PDF files
-- Highlighting of sale items in the manifest
+- PDF manifest parsing
+- Matching sale items with manifest items
 - Downloadable reports
 - User authentication
 - Integration with external inventory systems
