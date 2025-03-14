@@ -14,6 +14,102 @@
   padding: 20px;
 }
 
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 350px;
+  max-width: 90%;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification-content {
+  padding: 15px;
+  background-color: #fff;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.notification-title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #333;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-close:hover {
+  color: #333;
+}
+
+.notification-details {
+  font-size: 14px;
+  color: #666;
+  margin-top: 5px;
+}
+
+.notification.success {
+  border-left: 4px solid #4caf50;
+}
+
+.notification.success .notification-title {
+  color: #2e7d32;
+}
+
+.notification.error {
+  border-left: 4px solid #f44336;
+}
+
+.notification.error .notification-title {
+  color: #d32f2f;
+}
+
+.notification.info {
+  border-left: 4px solid #2196f3;
+}
+
+.notification.info .notification-title {
+  color: #1976d2;
+}
+
+.notification.warning {
+  border-left: 4px solid #ff9800;
+}
+
+.notification.warning .notification-title {
+  color: #ef6c00;
+}
+
 .upload-buttons {
   display: flex;
   flex-direction: row;

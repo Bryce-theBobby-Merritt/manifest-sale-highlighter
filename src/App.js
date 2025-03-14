@@ -12,6 +12,7 @@ function App() {
   const [processedData, setProcessedData] = useState(null);
   const [processingStage, setProcessingStage] = useState(null);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [notification, setNotification] = useState(null);
   
   const excelInputRef = useRef(null);
   const pdfInputRef = useRef(null);
@@ -22,6 +23,28 @@ function App() {
   const API_URL = 'http://localhost:5000/api/upload';
   // Server base URL
   const SERVER_URL = 'http://localhost:5000';
+
+  // Function to show notification
+  const showNotification = (type, message, details = null) => {
+    setNotification({
+      type,
+      message,
+      details,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Auto-dismiss success notifications after 10 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        setNotification(prev => {
+          if (prev && prev.timestamp === notification.timestamp) {
+            return null;
+          }
+          return prev;
+        });
+      }, 10000);
+    }
+  };
 
   // Simulate processing stages and progress
   useEffect(() => {
@@ -139,12 +162,14 @@ function App() {
       // Validate file extension
       if (!file.name.endsWith('.xlsx')) {
         setError('Please select an Excel (.xlsx) file');
+        showNotification('error', 'Invalid file type', 'Please select an Excel (.xlsx) file');
         event.target.value = null;
         return;
       }
       
       // Validate file size
       if (!validateFileSize(file)) {
+        showNotification('error', 'File too large', `Maximum allowed size is 20 MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`);
         event.target.value = null;
         return;
       }
@@ -154,6 +179,7 @@ function App() {
         excel: file
       }));
       setError(null);
+      showNotification('info', 'Excel file selected', `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
     }
   };
 
@@ -163,12 +189,14 @@ function App() {
       // Validate file extension
       if (!file.name.endsWith('.pdf')) {
         setError('Please select a PDF (.pdf) file');
+        showNotification('error', 'Invalid file type', 'Please select a PDF (.pdf) file');
         event.target.value = null;
         return;
       }
       
       // Validate file size
       if (!validateFileSize(file)) {
+        showNotification('error', 'File too large', `Maximum allowed size is 20 MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`);
         event.target.value = null;
         return;
       }
@@ -178,6 +206,7 @@ function App() {
         pdf: file
       }));
       setError(null);
+      showNotification('info', 'PDF file selected', `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
     }
   };
 
@@ -185,6 +214,7 @@ function App() {
     // Validate that both files are selected
     if (!selectedFiles.excel || !selectedFiles.pdf) {
       setError('Please select both Excel and PDF files before submitting');
+      showNotification('error', 'Missing files', 'Please select both Excel and PDF files before submitting');
       return;
     }
 
@@ -192,6 +222,7 @@ function App() {
     setError(null);
     setUploadStatus(null);
     setProcessedData(null);
+    showNotification('info', 'Processing started', 'Uploading and processing your files...');
 
     // Create FormData object to send files
     const formData = new FormData();
@@ -219,6 +250,13 @@ function App() {
           });
           setProcessedData(result);
           setIsUploading(false);
+          
+          // Show success notification with stats
+          showNotification(
+            'success', 
+            'Processing complete!', 
+            `Found ${result.stats.totalMatches} matched sale items out of ${result.stats.saleItems} total sale items.`
+          );
         }, 500);
       } else {
         throw new Error(result.message || `Server responded with status: ${response.status}`);
@@ -232,6 +270,9 @@ function App() {
         message: `Upload failed: ${err.message}`
       });
       setIsUploading(false);
+      
+      // Show error notification
+      showNotification('error', 'Processing failed', err.message);
     }
   };
 
@@ -263,16 +304,46 @@ function App() {
     setError(null);
     setUploadStatus(null);
     setProcessedData(null);
+    setNotification(null);
     
     // Reset file inputs
     if (excelInputRef.current) excelInputRef.current.value = null;
     if (pdfInputRef.current) pdfInputRef.current.value = null;
+    
+    showNotification('info', 'Form reset', 'Ready to process new files');
+  };
+
+  // Function to dismiss notification
+  const dismissNotification = () => {
+    setNotification(null);
   };
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>Manifest Sale Highlighter</h1>
+        
+        {notification && (
+          <div className={`notification ${notification.type}`}>
+            <div className="notification-content">
+              <div className="notification-header">
+                <span className="notification-title">{notification.message}</span>
+                <button 
+                  className="notification-close"
+                  onClick={dismissNotification}
+                  aria-label="Close notification"
+                >
+                  ×
+                </button>
+              </div>
+              {notification.details && (
+                <div className="notification-details">
+                  {notification.details}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         <div className="upload-buttons">
           <button 
