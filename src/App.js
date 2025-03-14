@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
@@ -10,6 +10,8 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [processedData, setProcessedData] = useState(null);
+  const [processingStage, setProcessingStage] = useState(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
   
   const excelInputRef = useRef(null);
   const pdfInputRef = useRef(null);
@@ -20,6 +22,98 @@ function App() {
   const API_URL = 'http://localhost:5000/api/upload';
   // Server base URL
   const SERVER_URL = 'http://localhost:5000';
+
+  // Simulate processing stages and progress
+  useEffect(() => {
+    if (isUploading) {
+      // Reset progress
+      setProcessingProgress(0);
+      setProcessingStage('Uploading files');
+      
+      // Simulate progress for file upload
+      const uploadTimer = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev >= 30) {
+            clearInterval(uploadTimer);
+            return 30;
+          }
+          return prev + 5;
+        });
+      }, 300);
+      
+      // Simulate Excel parsing stage
+      setTimeout(() => {
+        setProcessingStage('Parsing Excel data');
+        clearInterval(uploadTimer);
+        
+        const excelTimer = setInterval(() => {
+          setProcessingProgress(prev => {
+            if (prev >= 50) {
+              clearInterval(excelTimer);
+              return 50;
+            }
+            return prev + 3;
+          });
+        }, 200);
+        
+        // Simulate PDF parsing stage
+        setTimeout(() => {
+          setProcessingStage('Parsing PDF manifest');
+          clearInterval(excelTimer);
+          
+          const pdfTimer = setInterval(() => {
+            setProcessingProgress(prev => {
+              if (prev >= 70) {
+                clearInterval(pdfTimer);
+                return 70;
+              }
+              return prev + 2;
+            });
+          }, 200);
+          
+          // Simulate matching stage
+          setTimeout(() => {
+            setProcessingStage('Matching sale items with PDF');
+            clearInterval(pdfTimer);
+            
+            const matchTimer = setInterval(() => {
+              setProcessingProgress(prev => {
+                if (prev >= 85) {
+                  clearInterval(matchTimer);
+                  return 85;
+                }
+                return prev + 1;
+              });
+            }, 150);
+            
+            // Simulate PDF generation stage
+            setTimeout(() => {
+              setProcessingStage('Generating highlighted PDF');
+              clearInterval(matchTimer);
+              
+              const pdfGenTimer = setInterval(() => {
+                setProcessingProgress(prev => {
+                  if (prev >= 95) {
+                    clearInterval(pdfGenTimer);
+                    return 95;
+                  }
+                  return prev + 1;
+                });
+              }, 200);
+            }, 1500);
+          }, 1500);
+        }, 1500);
+      }, 1500);
+      
+      return () => {
+        clearInterval(uploadTimer);
+      };
+    } else {
+      // Reset when not uploading
+      setProcessingStage(null);
+      setProcessingProgress(0);
+    }
+  }, [isUploading]);
 
   const handleExcelUploadClick = () => {
     setError(null);
@@ -114,20 +208,29 @@ function App() {
       const result = await response.json();
       
       if (response.ok && result.success) {
-        setUploadStatus({
-          success: true,
-          message: result.message || 'Files uploaded successfully!'
-        });
-        setProcessedData(result);
+        // Set progress to 100% when complete
+        setProcessingProgress(100);
+        setProcessingStage('Processing complete');
+        
+        setTimeout(() => {
+          setUploadStatus({
+            success: true,
+            message: result.message || 'Files uploaded successfully!'
+          });
+          setProcessedData(result);
+          setIsUploading(false);
+        }, 500);
       } else {
         throw new Error(result.message || `Server responded with status: ${response.status}`);
       }
     } catch (err) {
+      setProcessingStage('Error occurred');
+      setProcessingProgress(0);
+      
       setUploadStatus({
         success: false,
         message: `Upload failed: ${err.message}`
       });
-    } finally {
       setIsUploading(false);
     }
   };
@@ -149,6 +252,21 @@ function App() {
       // Clean up
       document.body.removeChild(link);
     }
+  };
+
+  const handleReset = () => {
+    // Reset the form
+    setSelectedFiles({
+      excel: null,
+      pdf: null
+    });
+    setError(null);
+    setUploadStatus(null);
+    setProcessedData(null);
+    
+    // Reset file inputs
+    if (excelInputRef.current) excelInputRef.current.value = null;
+    if (pdfInputRef.current) pdfInputRef.current.value = null;
   };
 
   return (
@@ -227,9 +345,24 @@ function App() {
         )}
         
         {isUploading && (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <p>Uploading and processing files, please wait...</p>
+          <div className="processing-indicator">
+            <div className="processing-stage">
+              <div className="spinner"></div>
+              <p>{processingStage || 'Processing...'}</p>
+            </div>
+            
+            <div className="progress-container">
+              <div 
+                className="progress-bar" 
+                style={{ width: `${processingProgress}%` }}
+              >
+                <span className="progress-text">{processingProgress}%</span>
+              </div>
+            </div>
+            
+            <div className="processing-details">
+              <p>Please wait while we process your files. This may take a few moments.</p>
+            </div>
           </div>
         )}
         
@@ -378,6 +511,15 @@ function App() {
                 <span className="legend-color match-color"></span>
                 <span className="legend-text">Matched Item (Sale Item in PDF)</span>
               </div>
+            </div>
+            
+            <div className="action-buttons">
+              <button 
+                className="reset-button"
+                onClick={handleReset}
+              >
+                Process New Files
+              </button>
             </div>
           </div>
         )}
