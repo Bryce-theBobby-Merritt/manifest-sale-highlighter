@@ -146,7 +146,8 @@ function matchSaleItemsWithPdf(excelData, pdfArticleNumbers) {
     totalMatches: matchedData.filter(item => item.isMatch).length,
     saleItemsInPdf: matchedData.filter(item => item.isSaleItem && item.isInPdf).length,
     saleItemsNotInPdf: matchedData.filter(item => item.isSaleItem && !item.isInPdf).length,
-    regularItemsInPdf: matchedData.filter(item => !item.isSaleItem && item.isInPdf).length
+    regularItemsInPdf: matchedData.filter(item => !item.isSaleItem && item.isInPdf).length,
+    regularItemsNotInPdf: matchedData.filter(item => !item.isSaleItem && !item.isInPdf).length
   };
   
   return { matchedData, matchStats };
@@ -290,7 +291,26 @@ app.post('/api/upload', upload.fields([
     const saleItems = excelData.filter(item => item.isSaleItem).length;
     const pdfItems = pdfData.articleNumbers.length;
     
-    // Return the processed data
+    // Get top matched items (for quick preview)
+    const topMatchedItems = matchedData
+      .filter(item => item.isMatch)
+      .slice(0, 5)
+      .map(item => ({
+        articleNo: item.articleNo,
+        salePrice: item.usSale
+      }));
+    
+    // Get processing time metadata
+    const processingMetadata = {
+      timestamp: new Date().toISOString(),
+      excelFileName: req.files.excel[0].originalname,
+      pdfFileName: req.files.pdf[0].originalname,
+      excelFileSize: req.files.excel[0].size,
+      pdfFileSize: req.files.pdf[0].size,
+      pdfPageCount: pdfData.totalPages || 'Unknown'
+    };
+    
+    // Return the processed data with enhanced metadata
     res.json({
       success: true,
       message: 'Files processed successfully',
@@ -302,6 +322,12 @@ app.post('/api/upload', upload.fields([
         saleItems,
         pdfItems,
         ...matchStats
+      },
+      metadata: processingMetadata,
+      preview: {
+        topMatchedItems,
+        matchRate: totalItems > 0 ? ((matchStats.totalMatches / totalItems) * 100).toFixed(2) + '%' : '0%',
+        saleItemsRate: totalItems > 0 ? ((saleItems / totalItems) * 100).toFixed(2) + '%' : '0%'
       }
     });
     

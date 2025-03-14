@@ -376,6 +376,38 @@ function App() {
           <div className="results-container">
             <h2>Processing Results</h2>
             
+            {processedData.metadata && (
+              <div className="metadata-section">
+                <h3>Processing Information</h3>
+                <div className="metadata-grid">
+                  <div className="metadata-item">
+                    <span className="metadata-label">Excel File:</span>
+                    <span className="metadata-value">{processedData.metadata.excelFileName}</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">PDF File:</span>
+                    <span className="metadata-value">{processedData.metadata.pdfFileName}</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">Excel Size:</span>
+                    <span className="metadata-value">{(processedData.metadata.excelFileSize / (1024 * 1024)).toFixed(2)} MB</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">PDF Size:</span>
+                    <span className="metadata-value">{(processedData.metadata.pdfFileSize / (1024 * 1024)).toFixed(2)} MB</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">PDF Pages:</span>
+                    <span className="metadata-value">{processedData.metadata.pdfPageCount}</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">Processed:</span>
+                    <span className="metadata-value">{new Date(processedData.metadata.timestamp).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="stats-container">
               <div className="stat-item">
                 <span className="stat-label">Excel Items</span>
@@ -395,6 +427,35 @@ function App() {
               </div>
             </div>
             
+            {processedData.preview && (
+              <div className="preview-section">
+                <div className="preview-rates">
+                  <div className="preview-rate-item">
+                    <span className="preview-rate-label">Match Rate:</span>
+                    <span className="preview-rate-value">{processedData.preview.matchRate}</span>
+                  </div>
+                  <div className="preview-rate-item">
+                    <span className="preview-rate-label">Sale Items Rate:</span>
+                    <span className="preview-rate-value">{processedData.preview.saleItemsRate}</span>
+                  </div>
+                </div>
+                
+                {processedData.preview.topMatchedItems && processedData.preview.topMatchedItems.length > 0 && (
+                  <div className="top-matches">
+                    <h4>Top Matched Sale Items</h4>
+                    <div className="top-matches-list">
+                      {processedData.preview.topMatchedItems.map((item, index) => (
+                        <div key={`top-${index}`} className="top-match-item">
+                          <span className="top-match-article">{item.articleNo}</span>
+                          <span className="top-match-price">${item.salePrice}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="match-stats">
               <div className="match-stat-item">
                 <span className="match-label">Sale Items in PDF:</span>
@@ -408,6 +469,12 @@ function App() {
                 <span className="match-label">Regular Items in PDF:</span>
                 <span className="match-value">{processedData.stats.regularItemsInPdf}</span>
               </div>
+              {processedData.stats.regularItemsNotInPdf !== undefined && (
+                <div className="match-stat-item">
+                  <span className="match-label">Regular Items not in PDF:</span>
+                  <span className="match-value">{processedData.stats.regularItemsNotInPdf}</span>
+                </div>
+              )}
             </div>
             
             {processedData.highlightedPdf && (
