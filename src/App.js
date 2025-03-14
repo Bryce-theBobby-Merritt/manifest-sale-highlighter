@@ -223,38 +223,65 @@ function App() {
             <h2>Processing Results</h2>
             <div className="stats-container">
               <div className="stat-item">
-                <span className="stat-label">Total Items:</span>
+                <span className="stat-label">Excel Items:</span>
                 <span className="stat-value">{processedData.stats.totalItems}</span>
               </div>
               <div className="stat-item">
                 <span className="stat-label">Sale Items:</span>
                 <span className="stat-value">{processedData.stats.saleItems}</span>
               </div>
+              <div className="stat-item">
+                <span className="stat-label">PDF Items:</span>
+                <span className="stat-value">{processedData.stats.pdfItems}</span>
+              </div>
             </div>
             
-            <div className="data-table-container">
-              <h3>Extracted Data</h3>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Article No.</th>
-                    <th>US Sale</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {processedData.excelData.slice(0, 10).map((item, index) => (
-                    <tr key={index} className={item.isSaleItem ? 'sale-item' : ''}>
-                      <td>{item.articleNo}</td>
-                      <td>{item.usSale || '-'}</td>
-                      <td>{item.isSaleItem ? 'On Sale' : 'Regular'}</td>
+            <div className="data-tables-wrapper">
+              <div className="data-table-container">
+                <h3>Excel Data</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Article No.</th>
+                      <th>US Sale</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {processedData.excelData.length > 10 && (
-                <p className="table-note">Showing 10 of {processedData.excelData.length} items</p>
-              )}
+                  </thead>
+                  <tbody>
+                    {processedData.excelData.slice(0, 10).map((item, index) => (
+                      <tr key={`excel-${index}`} className={item.isSaleItem ? 'sale-item' : ''}>
+                        <td>{item.articleNo}</td>
+                        <td>{item.usSale || '-'}</td>
+                        <td>{item.isSaleItem ? 'On Sale' : 'Regular'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {processedData.excelData.length > 10 && (
+                  <p className="table-note">Showing 10 of {processedData.excelData.length} items</p>
+                )}
+              </div>
+              
+              <div className="data-table-container">
+                <h3>PDF Article Numbers</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Article No.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {processedData.pdfData.articleNumbers.slice(0, 10).map((item, index) => (
+                      <tr key={`pdf-${index}`}>
+                        <td>{item}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {processedData.pdfData.articleNumbers.length > 10 && (
+                  <p className="table-note">Showing 10 of {processedData.pdfData.articleNumbers.length} items</p>
+                )}
+              </div>
             </div>
           </div>
         )}
