@@ -5,6 +5,7 @@ const xlsx = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -13,6 +14,12 @@ const port = process.env.PORT || 5000;
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Create output directory for generated PDFs
+const outputDir = path.join(__dirname, 'output');
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
 }
 
 // Configure multer for file uploads
@@ -48,6 +55,7 @@ const upload = multer({
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/output', express.static(outputDir));
 
 // Function to parse Excel file
 function parseExcelFile(filePath) {
@@ -144,6 +152,105 @@ function matchSaleItemsWithPdf(excelData, pdfArticleNumbers) {
   return { matchedData, matchStats };
 }
 
+// Function to generate a highlighted PDF
+async function generateHighlightedPdf(pdfFilePath, matchedData) {
+  try {
+    // Read the original PDF
+    const pdfBytes = fs.readFileSync(pdfFilePath);
+    
+    // Load the PDF document
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    
+    // Create a new PDF document for the highlighted version
+    const newPdfDoc = await PDFDocument.create();
+    
+    // Copy all pages from the original PDF to the new one
+    const pages = await newPdfDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+    pages.forEach(page => newPdfDoc.addPage(page));
+    
+    // Get all matched article numbers (sale items that are in the PDF)
+    const matchedArticleNumbers = matchedData
+      .filter(item => item.isMatch)
+      .map(item => String(item.articleNo).trim());
+    
+    // Create a Set for faster lookups
+    const matchedArticleSet = new Set(matchedArticleNumbers);
+    
+    // Get the font
+    const font = await newPdfDoc.embedFont(StandardFonts.Helvetica);
+    
+    // Process each page
+    for (let i = 0; i < newPdfDoc.getPageCount(); i++) {
+      const page = newPdfDoc.getPage(i);
+      
+      // Get the text content of the page using pdf-parse
+      const pageText = await pdfParse(pdfBytes, { 
+        max: 1, 
+        pagerender: (pageData) => {
+          if (pageData.pageIndex === i) return pageData.getTextContent();
+          return null;
+        }
+      });
+      
+      // Find all article numbers on this page
+      const articleNoPattern = /\b\d{6,10}\b/g;
+      let match;
+      
+      while ((match = articleNoPattern.exec(pageText.text)) !== null) {
+        const articleNo = match[0];
+        
+        // Check if this article number is a matched sale item
+        if (matchedArticleSet.has(articleNo)) {
+          // Calculate position (approximate)
+          // This is a simplified approach - in a real-world scenario, 
+          // you would need more sophisticated positioning
+          const matchIndex = match.index;
+          const textBefore = pageText.text.substring(0, matchIndex);
+          const lines = textBefore.split('\n');
+          
+          // Approximate y position based on line count
+          // This is very approximate and would need refinement
+          const y = page.getHeight() - (lines.length * 15);
+          
+          // Draw a highlight rectangle
+          page.drawRectangle({
+            x: 50,
+            y: y - 5,
+            width: 100,
+            height: 20,
+            color: rgb(1, 0.8, 0.2),
+            opacity: 0.3,
+          });
+          
+          // Draw the article number on top
+          page.drawText(`SALE: ${articleNo}`, {
+            x: 55,
+            y: y,
+            size: 12,
+            font: font,
+            color: rgb(1, 0, 0),
+          });
+        }
+      }
+    }
+    
+    // Save the new PDF
+    const outputFilename = `highlighted-${Date.now()}.pdf`;
+    const outputPath = path.join(outputDir, outputFilename);
+    const newPdfBytes = await newPdfDoc.save();
+    fs.writeFileSync(outputPath, newPdfBytes);
+    
+    return {
+      filename: outputFilename,
+      path: outputPath,
+      url: `/output/${outputFilename}`
+    };
+  } catch (error) {
+    console.error('Error generating highlighted PDF:', error);
+    throw error;
+  }
+}
+
 // API endpoint for file upload
 app.post('/api/upload', upload.fields([
   { name: 'excel', maxCount: 1 },
@@ -169,6 +276,15 @@ app.post('/api/upload', upload.fields([
     // Match sale items with PDF article numbers
     const { matchedData, matchStats } = matchSaleItemsWithPdf(excelData, pdfData.articleNumbers);
     
+    // Generate highlighted PDF
+    let highlightedPdf = null;
+    try {
+      highlightedPdf = await generateHighlightedPdf(pdfFilePath, matchedData);
+    } catch (error) {
+      console.error('Error generating highlighted PDF:', error);
+      // Continue without highlighted PDF
+    }
+    
     // Calculate statistics
     const totalItems = excelData.length;
     const saleItems = excelData.filter(item => item.isSaleItem).length;
@@ -180,6 +296,7 @@ app.post('/api/upload', upload.fields([
       message: 'Files processed successfully',
       excelData: matchedData,
       pdfData,
+      highlightedPdf,
       stats: {
         totalItems,
         saleItems,

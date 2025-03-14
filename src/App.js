@@ -18,6 +18,8 @@ function App() {
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
   // Server API URL
   const API_URL = 'http://localhost:5000/api/upload';
+  // Server base URL
+  const SERVER_URL = 'http://localhost:5000';
 
   const handleExcelUploadClick = () => {
     setError(null);
@@ -127,6 +129,25 @@ function App() {
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (processedData && processedData.highlightedPdf) {
+      // Create a download link
+      const downloadUrl = `${SERVER_URL}${processedData.highlightedPdf.url}`;
+      
+      // Create a temporary anchor element
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = processedData.highlightedPdf.filename;
+      document.body.appendChild(link);
+      
+      // Trigger the download
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
     }
   };
 
@@ -255,6 +276,18 @@ function App() {
                 <span className="match-value">{processedData.stats.regularItemsInPdf}</span>
               </div>
             </div>
+            
+            {processedData.highlightedPdf && (
+              <div className="download-section">
+                <p>A highlighted PDF has been generated with all sale items marked.</p>
+                <button 
+                  className="download-button"
+                  onClick={handleDownloadPdf}
+                >
+                  Download Highlighted PDF
+                </button>
+              </div>
+            )}
             
             <div className="data-tables-wrapper">
               <div className="data-table-container">
